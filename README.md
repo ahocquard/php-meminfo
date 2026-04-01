@@ -57,6 +57,23 @@ This function generates a dump of the PHP memory in a JSON format. This dump can
 
 This function takes a stream handle as a parameter. It allows you to specify a file (ex `fopen('/tmp/file.txt', 'w')`, as well as to use standard output with the `php://stdout` stream.
 
+## Dumping memory content by sending a signal
+
+For long-running processes, it can be tedious to determine when to call the `meminfo_dump` function. If the script calls the function too often, it generates a lot of files and noise. Worst case is that the script does not call the function at all.
+A trick is to generate on-demand timestamped memory dumps by sending a signal externally to the process.
+
+Add this at the beginning of your script.
+```php
+pcntl_async_signals(true);
+pcntl_signal(SIGUSR1, function() { $date = new \Datetime(); $formattedDate = date_format($date, 'His_Ymd');  meminfo_dump(fopen("/var/tmp/dump_$formattedDate.json", 'w')); });
+```
+
+
+Then, send the signal to the PHP process:
+```
+kill -SIGUSR1 1234
+```
+
 ## Displaying a summary of items in memory
 ```bash
 $ bin/analyzer summary <dump-file>
